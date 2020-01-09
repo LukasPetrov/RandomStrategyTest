@@ -29,7 +29,7 @@ public class Tools {
                     for (int B = param1I; B <= param2; B++){
                         boolean zapis=true;
                         //            System.out.print("\n\n" + A + " " + B + "\t\t");
-                        if (A != B){ // jen kdyz nejsou stejny
+                        //if (A != B){ // jen kdyz nejsou stejny
                             if (BL.contains(A)){
                                 aa: for (int i = 0;i < BL.size();i++){
                                     //                        System.out.print( " i : " + i +"\t");
@@ -57,7 +57,7 @@ public class Tools {
                                 //                    System.out.println("\t" +BL);
                                 finalNumber++;
                             }
-                        }
+                        //}
                         //System.out.print("\ttotozne hodnoty\t\t A " + A + "    B " + B);
                     }
                 }
@@ -88,8 +88,10 @@ public class Tools {
             public static int getFinalNumber() {
                 return finalNumber;
             }
+
+            // tester
             public static void main(String[] arg) {
-                listOfParameters(5,8);
+                listOfParameters(1,20);
             }
         }
 

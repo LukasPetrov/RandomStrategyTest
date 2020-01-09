@@ -165,7 +165,7 @@
           <gridbag weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties>
-          <text value="100"/>
+          <text value="0"/>
         </properties>
       </component>
       <component id="d17b1" class="javax.swing.JLabel">
@@ -206,7 +206,7 @@
           <gridbag weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties>
-          <text value="120"/>
+          <text value="200"/>
         </properties>
       </component>
     </children>

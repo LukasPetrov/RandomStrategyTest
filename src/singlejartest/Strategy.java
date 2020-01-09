@@ -35,6 +35,7 @@ import com.dukascopy.api.IIndicators.AppliedPrice;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.*;
 
 public class Strategy implements IStrategy {
@@ -60,18 +61,13 @@ public class Strategy implements IStrategy {
     private int smaTimePeriod_2;
     private String strategyName;
 
-    public Strategy(int smaTimePeriod_1, int smaTimePeriod_2, boolean GUITest){
-        // smaTimePeriod1 must by smaller than 2
-        if(smaTimePeriod_1 < smaTimePeriod_2){
-            this.smaTimePeriod_1 = smaTimePeriod_1 * 10;
-            this.smaTimePeriod_2 = smaTimePeriod_2 * 10;
-        }else{
-            this.smaTimePeriod_1 = smaTimePeriod_2 * 10;
-            this.smaTimePeriod_2 = smaTimePeriod_1 * 10;
-        }
+    public Strategy(int stopLossPips, int takeProfitPips, boolean GUITest){
+        // smaTimePeriod1 must be smaller than smaTimePeriod2
+        this.stopLossPips = stopLossPips * 10;
+        this.takeProfitPips = takeProfitPips * 10;
 
         // create strategy name
-        strategyName = smaTimePeriod_1*10 + "/" + smaTimePeriod_2*10;
+        strategyName = stopLossPips*10 + "/" + takeProfitPips*10;
         DataCube.addStrategyName(strategyName);
 
         //  for GUI testing DataCube is not available
@@ -100,8 +96,6 @@ public class Strategy implements IStrategy {
             return;
         }
         chart = context.getChart(instrument);
-        chart.add(indicators.getIndicator("SMA"), new Object[]{smaTimePeriod_1});
-        chart.add(indicators.getIndicator("SMA"), new Object[]{smaTimePeriod_2});
     }
 
     @Override
@@ -275,6 +269,42 @@ public class Strategy implements IStrategy {
                 ma1IsBiggerOld = true;
             }
         }
+    }
+    /* creating new orders logic */
+    public void newOrderLogic2(Instrument instrument) throws JFException {
+
+        // pro kazdou promennou se vybere nahodna doba v minutach v
+        // v zadanem rozsahu, kazdy den ma 5 takovych useku (time5_10 = 5:00 az 10:00)
+        int time0_5 = getRandomNumber(0 * 60 ,5 * 60);
+        int time5_10 = getRandomNumber(5 * 60 ,10 * 60);
+        int time10_15 = getRandomNumber(10 * 60 ,15 * 60);
+        int time15_20 = getRandomNumber(15 * 60 ,20 * 60);
+        int time20_24 = getRandomNumber(20 * 60 ,24 * 60);
+
+        // seznam vsech
+        int[] day = new int[5];
+
+        //zapis hodnot
+        day[0] = time0_5 * 60;
+        day[1] = time5_10 * 60;
+        day[2] = time10_15 * 60;
+        day[3] = time15_20 * 60;
+        day[4] = time20_24 * 60;
+
+        for (int i : day) {
+            System.out.println(LocalTime.ofSecondOfDay(i));
+        }
+
+    }
+
+    private static int getRandomNumber(int min, int max) {
+
+        if (min >= max) {
+            throw new IllegalArgumentException("max must be greater than min");
+        }
+
+        Random r = new Random();
+        return r.nextInt((max - min) + 1) + min;
     }
 
     private double point() throws JFException {
