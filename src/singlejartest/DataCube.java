@@ -69,6 +69,9 @@ public class DataCube {
         addData3D(ordersIndex, strategy, order);
     }
 
+    public static void setOrder(int strategy, IOrder order) {
+        addData3D(ordersIndex, strategy, order);
+    }
     public static void setDateFrom(Date dateFrom){
         setData1D(dateFromIndex, dateFrom);
     }
@@ -279,5 +282,43 @@ public class DataCube {
      */
     private static void setData1D(int x, Object list){
         firstLevel.set(x, list);
+    }
+
+    /**
+     * Set/Replace value in the list in the 3th Dimension to x.
+     *
+     * @param  x 1st Dimension
+     * @param  y 2nd Dimension
+     * @param  z 3th Dimension
+     * @param  value add this list
+     */
+    private static void setData3D(int x, int y, int z, Object value){
+        //try if list exists if not (error) create new and then add new value
+        try{
+            // load first level
+            ArrayList<Object> secondLevel = (ArrayList<Object>) firstLevel.get(x);
+
+            // load second list
+            ArrayList<Object> thirdLevel = (ArrayList<Object>) secondLevel.get(y);
+            thirdLevel.set(z, value);
+
+            // overwrite original list
+            secondLevel.set(y, thirdLevel);
+            firstLevel.set(x, secondLevel);
+        }catch(Exception e){
+            // create new list to solve the error
+            addData2D(x, new ArrayList<Integer>());
+
+            // load first level
+            ArrayList<Object> secondLevel = (ArrayList<Object>) firstLevel.get(x);
+
+            // load second list
+            ArrayList<Object> thirdLevel = (ArrayList<Object>) secondLevel.get(y);
+            thirdLevel.set(z, value);
+
+            // overwrite original list
+            secondLevel.set(y, thirdLevel);
+            firstLevel.set(x, secondLevel);
+        }
     }
 }

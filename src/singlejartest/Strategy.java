@@ -34,6 +34,7 @@ import com.dukascopy.api.IEngine.OrderCommand;
 import com.dukascopy.api.IIndicators.AppliedPrice;
 import com.dukascopy.api.drawings.IChartObjectFactory;
 import com.dukascopy.api.drawings.IVerticalLineChartObject;
+import com.dukascopy.dds4.transport.common.mina.IoFutureListenerImpl;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -507,16 +508,16 @@ public class Strategy implements IStrategy {
 
     private IOrder submitOrder(IEngine.OrderCommand orderCmd) throws JFException {
 
-        // in gui mode add vertical line with each new order
-        IChartObjectFactory factory = chart.getChartObjectFactory();
-        IVerticalLineChartObject vLine = factory.createVerticalLine("vLine",history.getTimeOfLastTick(instrument));
-        chart.add(vLine);
+//        // in gui mode add vertical line with each new order
+//        IChartObjectFactory factory = chart.getChartObjectFactory();
+//        IVerticalLineChartObject vLine = factory.createVerticalLine("vLine",history.getTimeOfLastTick(instrument));
+//        chart.add(vLine);
 
 
-
-        IBar bar100 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 100);
+        // get orders from last 1000 bars
+        IBar bar1000 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 1000);
         IBar bar1 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 0);
-        List<IOrder> previousOrders = history.getOrdersHistory(instrument, bar100.getTime(), bar1.getTime());
+        List<IOrder> previousOrders = history.getOrdersHistory(instrument, bar1000.getTime(), bar1.getTime());
         for (IOrder order : previousOrders) {
             console.getOut().println("Order info: " + order);
         }
@@ -586,5 +587,36 @@ public class Strategy implements IStrategy {
         label = label + (counter++);
         label = label.toUpperCase();
         return label;
+    }
+
+    private void dataCubeOrdersUpdate() throws JFException {
+        int orderLocalCounter = 0;
+        List<IOrder> orders = new ArrayList<IOrder>();
+
+        // search the entire list of orders
+        for(IOrder actualOrder : engine.getOrders()){
+            String orderId = instrument.toString() + orderLocalCounter;
+            orderLocalCounter++;
+
+            // id z engine == id z "generatoru" ???
+            if (actualOrder.getId() == orderId) {
+                // jestli ano projed seznam objednavek v DataCube
+                for(IOrder dataCubeOrder : DataCube.getOrders(1)) {
+                    // jestli id z datacube == id z engine a zaroven z generatoru
+                    if (dataCubeOrder.getId() == orderId){
+                        System.out.println("Schoda, order: " + orderId);
+
+                        //nahrazuji stary order novym | dataCubeOrder / actualOrder
+                        DataCube.setOrder(1, actualOrder);
+
+
+
+
+                        IOrder compare1 = dataCubeOrder;
+                        IOrder compare2 = actualOrder;
+                    }
+                }
+            }
+        }
     }
 }
