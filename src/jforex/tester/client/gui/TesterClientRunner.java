@@ -58,7 +58,7 @@ class TesterClientRunner {
 
         client.setSystemListener(systemListener);
         tryToConnect(jnlpUrl, userName, password);
-        setDataInterval("2017/01/16 00:00:00", "2017/01/17 23:00:00");
+        setDataInterval("2019/01/01 00:00:00", "2019/02/01 00:00:00");
         subscribeInstrument(instrument);
         downloadDataAndWaitForResult();
 
@@ -133,7 +133,7 @@ class TesterClientRunner {
         Date dateFromObject = dateFormat.parse(dateFrom);
         Date dateToObject = dateFormat.parse(dateTo);
 
-        client.setDataInterval(ITesterClient.DataLoadingMethod.ALL_TICKS, dateFromObject.getTime(), dateToObject.getTime());
+        client.setDataInterval(ITesterClient.DataLoadingMethod.DIFFERENT_PRICE_TICKS, dateFromObject.getTime(), dateToObject.getTime());
         LOGGER.info("from: " + dateFrom.toString() + " to: " + dateTo.toString());
     }
 }

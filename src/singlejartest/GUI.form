@@ -93,7 +93,7 @@
             <item value="1 Week"/>
             <item value="1 Month"/>
           </model>
-          <selectedIndex value="7"/>
+          <selectedIndex value="2"/>
         </properties>
       </component>
       <component id="8c238" class="javax.swing.JTextField" binding="dateToTextField">
@@ -104,7 +104,7 @@
           <gridbag weightx="1.0" weighty="1.0"/>
         </constraints>
         <properties>
-          <text value="08/01/2019"/>
+          <text value="01/02/2019"/>
           <toolTipText value="dd/MM/yyyy"/>
         </properties>
       </component>
@@ -206,7 +206,7 @@
           <gridbag weightx="0.0" weighty="0.0"/>
         </constraints>
         <properties>
-          <text value="200"/>
+          <text value="20"/>
         </properties>
       </component>
     </children>
