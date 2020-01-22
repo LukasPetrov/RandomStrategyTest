@@ -32,9 +32,6 @@ package singlejartest;
 import com.dukascopy.api.*;
 import com.dukascopy.api.IEngine.OrderCommand;
 import com.dukascopy.api.IIndicators.AppliedPrice;
-import com.dukascopy.api.drawings.IChartObjectFactory;
-import com.dukascopy.api.drawings.IVerticalLineChartObject;
-import com.dukascopy.dds4.transport.common.mina.IoFutureListenerImpl;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -57,12 +54,13 @@ public class Strategy implements IStrategy {
     private static Period period = Period.ONE_MIN;
     private Filter indicatorFilter = Filter.ALL_FLATS;
     public double amount = 0.001;
-    public int stopLossPips = 10;
-    public int takeProfitPips = 30;
+    public int stopLossPips = 50;
+    public int takeProfitPips = 50;
     public int breakEvenPips = 25;
     private int smaTimePeriod_1;
     private int smaTimePeriod_2;
     private String strategyName;
+    private int strategyNumber;
 
 
     boolean time0_5_ready = true;
@@ -78,15 +76,17 @@ public class Strategy implements IStrategy {
     int time20_24 = getRandomNumber(20 * 60,24 * 60);
 
     boolean GUITest;
-
     public Strategy(int stopLossPips, int takeProfitPips, boolean GUITest){
-        // smaTimePeriod1 must be smaller than smaTimePeriod2
-//        this.stopLossPips = stopLossPips * 10;
-//        this.takeProfitPips = takeProfitPips * 10;
+        // set sl and tp in pips
+        this.stopLossPips = stopLossPips * 10;
+        this.takeProfitPips = takeProfitPips * 10;
 
         // create strategy name
         strategyName = stopLossPips*10 + "/" + takeProfitPips*10;
         DataCube.addStrategyName(strategyName);
+
+        //get strategy number
+        strategyNumber =0;                  /**--------------------------------------------------------------------*/
 
         this.GUITest = GUITest;
         //  for GUI testing DataCube is not available
@@ -97,6 +97,14 @@ public class Strategy implements IStrategy {
 
         // reset orderCounter for new test
         orderCounter = 0;
+
+
+        //create OrdersWindow
+//        new GUI.OrdersWindow();
+
+
+
+
     }
 
     @Override
@@ -122,6 +130,8 @@ public class Strategy implements IStrategy {
         }
         chart = context.getChart(instrument);
 
+
+
     }
 
     @Override
@@ -135,7 +145,85 @@ public class Strategy implements IStrategy {
         storeEquity(instrument);
         //trailPosition(order, history.getLastTick(instrument));
 
+
+
+
+
+
+
+
+//        List<IOrder> list = DataCube.getOrders(strategyNumber);
+//            ArrayList<String[]> newDataForOrderstWindow = new ArrayList<>();
+//
+//        for (IOrder order : list) {
+//            // Data to be displayed in the JTable
+//            newDataForOrderstWindow.add(new String[]{
+//                    String.valueOf(order.getLabel()),
+//                    String.valueOf(order.getOrderCommand()),
+//                    String.valueOf(order.getAmount()),
+//                    String.valueOf(order.getProfitLossInAccountCurrency()),
+//                    String.valueOf(order.getProfitLossInPips()),
+//                    String.valueOf(order.getCommissionInUSD())
+//            });
+//
+//        }
+
+
+//        GUI.OrdersWindow.model.addRow(new Object[]{"Column 1", "Column 2", "Column 3"});
+
+//        refreshOrdersWindow();
     }
+
+    public void refreshOrdersWindow(){
+
+
+        // remove all rows from the model
+        GUI.OrdersWindow.clear(GUI.OrdersWindow.model);
+
+
+        if (orderCounter > 0) {
+            List<IOrder> list = DataCube.getOrders(strategyNumber);
+            if (list.size() > 0) {
+                // create list
+                ArrayList<String[]> newDataForOrderstWindow = new ArrayList<>();
+
+                // add all orders to the String[][]
+                for (IOrder order : list) {
+                    // Data to be displayed in the JTable
+                    newDataForOrderstWindow.add(new String[]{
+                            String.valueOf(order.getLabel()),
+                            String.valueOf(order.getOrderCommand()),
+                            String.valueOf(order.getAmount()),
+                            String.valueOf(order.getProfitLossInAccountCurrency()),
+                            String.valueOf(order.getProfitLossInPips()),
+                            String.valueOf(order.getCommissionInUSD())
+                    });
+
+                }
+
+                // convert arrayList to String[][]
+                String[][] array = new String[newDataForOrderstWindow.size()][];
+                for (int i = 0; i < newDataForOrderstWindow.size(); i++) {
+                    String[] row = newDataForOrderstWindow.get(i);
+                    array[i] = row;
+                }
+
+                System.out.println(array[0][0].toString()
+                        + array[0][1].toString()
+                        + array[0][2].toString()
+                        + array[0][3].toString()
+                        + array[0][4].toString()
+                        + array[0][5].toString());
+
+                for (String[] a : array) {
+
+                    // fill model by new newDataForOrderstWindow
+                    GUI.OrdersWindow.model.addRow(new Object[]{a[0], a[1], a[2], a[3], a[4], a[5]});
+                }
+            }
+        }
+    }
+
 
     @Override
     public void onStop() throws JFException {
@@ -149,7 +237,7 @@ public class Strategy implements IStrategy {
         DataCube.addFinalDeposit(account.getEquity());
 
         // show graph after last test
-        if (Tools.MACrossList.getFinalNumber()-1 == TestMainRepeater.getLoopCounter()) {
+        if (Tools.SLTPGenerator.getNumOfStrategies()-1 == TestMainRepeater.getLoopCounter()) {
 
             /** get list of certain number of the best strategies */
             // create list of best results
@@ -179,7 +267,7 @@ public class Strategy implements IStrategy {
             list3.forEach((x) -> System.out.println(x+1 + " " + DataCube.getFinalDeposit(x) ));
 
 
-            GUI.ShowChart.showGraph();
+//            GUI.ShowChart.showGraph();
 
         }
 
@@ -303,112 +391,124 @@ public class Strategy implements IStrategy {
         // get actual time
         SimpleDateFormat formatter = new SimpleDateFormat("HH:mm");
         Date date = new Date();
+        int timeResultNumber = 0;
 //        System.out.println(formatter.format(date));
 
+        try {
+            askBar.getTime();
+            timeResultNumber = time0_5 * 60;
+            if ((time0_5 * 60) > 86399) timeResultNumber =86399;
+            if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time0_5_ready) {
+                // random BUY/SELL == 1/0
+                int order = getRandomNumber(0, 1);
+                if (order == 1) {
+                    print("Create BUY");
+                    submitOrder(OrderCommand.BUY);
+                } else if (order == 0) {
+                    print("Create SELL");
+                    submitOrder(OrderCommand.SELL);
+                }
 
-        askBar.getTime();
-        if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(time0_5 * 60).toString()) && time0_5_ready){
-            // random BUY/SELL == 1/0
-            int order = getRandomNumber(0,1);
-            if (order == 1){
-                print("Create BUY");
-                submitOrder(OrderCommand.BUY);
-            }else if(order == 0){
-                print("Create SELL");
-                submitOrder(OrderCommand.SELL);
+                // there can be only one order at the time
+                time0_5_ready = false;
+
+                // set previous interval to ready
+                time20_24_ready = true;
+
+                // vygeneruje nahodny cas pro dalsi casovy usek
+                time5_10 = getRandomNumber(5 * 60, 10 * 60);
             }
+            timeResultNumber = time5_10 * 60;
+            if ((time5_10 * 60) > 86399) timeResultNumber =86399;
+            if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time5_10_ready) {
+                // random BUY/SELL == 1/0
+                int order = getRandomNumber(0, 1);
+                if (order == 1) {
+                    print("Create BUY");
+                    submitOrder(OrderCommand.BUY);
+                } else if (order == 0) {
+                    print("Create SELL");
+                    submitOrder(OrderCommand.SELL);
+                }
 
-            // there can be only one order at the time
-            time0_5_ready = false;
+                // there can be only one order at the time
+                time5_10_ready = false;
 
-            // set previous interval to ready
-            time20_24_ready = true;
+                // set previous interval to ready
+                time0_5_ready = true;
 
-            // vygeneruje nahodny cas pro dalsi casovy usek
-            time5_10 = getRandomNumber(5 * 60,10 * 60);
-        }
-        if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(time5_10 * 60).toString()) && time5_10_ready){
-            // random BUY/SELL == 1/0
-            int order = getRandomNumber(0,1);
-            if (order == 1){
-                print("Create BUY");
-                submitOrder(OrderCommand.BUY);
-            }else if(order == 0){
-                print("Create SELL");
-                submitOrder(OrderCommand.SELL);
+                // vygeneruje nahodny cas pro dalsi casovy usek
+                time10_15 = getRandomNumber(10 * 60, 15 * 60);
             }
+            timeResultNumber = time10_15 * 60;
+            if ((time10_15 * 60) > 86399) timeResultNumber =86399;
+            if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time10_15_ready) {
+                // random BUY/SELL == 1/0
+                int order = getRandomNumber(0, 1);
+                if (order == 1) {
+                    print("Create BUY");
+                    submitOrder(OrderCommand.BUY);
+                } else if (order == 0) {
+                    print("Create SELL");
+                    submitOrder(OrderCommand.SELL);
+                }
 
-            // there can be only one order at the time
-            time5_10_ready = false;
+                // there can be only one order at the time
+                time10_15_ready = false;
 
-            // set previous interval to ready
-            time0_5_ready = true;
+                // set previous interval to ready
+                time5_10_ready = true;
 
-            // vygeneruje nahodny cas pro dalsi casovy usek
-            time10_15 = getRandomNumber(10 * 60,15 * 60);
-        }
-        if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(time10_15 * 60).toString()) && time10_15_ready){
-            // random BUY/SELL == 1/0
-            int order = getRandomNumber(0,1);
-            if (order == 1){
-                print("Create BUY");
-                submitOrder(OrderCommand.BUY);
-            }else if(order == 0){
-                print("Create SELL");
-                submitOrder(OrderCommand.SELL);
+                // vygeneruje nahodny cas pro dalsi casovy usek
+                time15_20 = getRandomNumber(15 * 60, 20 * 60);
             }
+            timeResultNumber = time15_20 * 60;
+            if ((time15_20 * 60) > 86399) timeResultNumber =86399;
+            if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time15_20_ready) {
+                // random BUY/SELL == 1/0
+                int order = getRandomNumber(0, 1);
+                if (order == 1) {
+                    print("Create BUY");
+                    submitOrder(OrderCommand.BUY);
+                } else if (order == 0) {
+                    print("Create SELL");
+                    submitOrder(OrderCommand.SELL);
+                }
 
-            // there can be only one order at the time
-            time10_15_ready = false;
+                // there can be only one order at the time
+                time15_20_ready = false;
 
-            // set previous interval to ready
-            time5_10_ready = true;
+                // set previous interval to ready
+                time10_15_ready = true;
 
-            // vygeneruje nahodny cas pro dalsi casovy usek
-            time15_20 = getRandomNumber(15 * 60,20 * 60);
-        }
-        if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(time15_20 * 60).toString()) && time15_20_ready){
-            // random BUY/SELL == 1/0
-            int order = getRandomNumber(0,1);
-            if (order == 1){
-                print("Create BUY");
-                submitOrder(OrderCommand.BUY);
-            }else if(order == 0){
-                print("Create SELL");
-                submitOrder(OrderCommand.SELL);
+                // vygeneruje nahodny cas pro dalsi casovy usek
+                time20_24 = getRandomNumber(20 * 60, 24 * 60);
             }
+            timeResultNumber = time20_24 * 60;
+            if ((time20_24 * 60) > 86399) timeResultNumber =86399;
+            if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time20_24_ready) {
+                // random BUY/SELL == 1/0
+                int order = getRandomNumber(0, 1);
+                if (order == 1) {
+                    print("Create BUY");
+                    submitOrder(OrderCommand.BUY);
+                } else if (order == 0) {
+                    print("Create SELL");
+                    submitOrder(OrderCommand.SELL);
+                }
 
-            // there can be only one order at the time
-            time15_20_ready = false;
+                // there can be only one order at the time
+                time20_24_ready = false;
 
-            // set previous interval to ready
-            time10_15_ready = true;
+                // set previous interval to ready
+                time15_20_ready = true;
 
-            // vygeneruje nahodny cas pro dalsi casovy usek
-            time20_24 = getRandomNumber(20 * 60,24 * 60);
-        }
-        if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(time20_24 * 60).toString()) && time20_24_ready){
-            // random BUY/SELL == 1/0
-            int order = getRandomNumber(0,1);
-            if (order == 1){
-                print("Create BUY");
-                submitOrder(OrderCommand.BUY);
-            }else if(order == 0){
-                print("Create SELL");
-                submitOrder(OrderCommand.SELL);
+                // vygeneruje nahodny cas pro dalsi casovy usek
+                time0_5 = getRandomNumber(0 * 60, 5 * 60);
             }
-
-            // there can be only one order at the time
-            time20_24_ready = false;
-
-            // set previous interval to ready
-            time15_20_ready = true;
-
-            // vygeneruje nahodny cas pro dalsi casovy usek
-            time0_5 = getRandomNumber(0 * 60,5 * 60);
+        }catch(Exception e){
+            System.out.println("Error: " + e);
         }
-
-
     }
 
     private static int getRandomNumber(int min, int max) {
@@ -514,13 +614,13 @@ public class Strategy implements IStrategy {
 //        chart.add(vLine);
 
 
-        // get orders from last 1000 bars
-        IBar bar1000 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 1000);
-        IBar bar1 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 0);
-        List<IOrder> previousOrders = history.getOrdersHistory(instrument, bar1000.getTime(), bar1.getTime());
-        for (IOrder order : previousOrders) {
-            console.getOut().println("Order info: " + order);
-        }
+////         get orders from last 1000 bars
+//        IBar bar1000 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 1000);
+//        IBar bar1 = history.getBar(Instrument.EURUSD, Period.ONE_MIN, OfferSide.ASK, 0);
+//        List<IOrder> previousOrders = history.getOrdersHistory(instrument, bar1000.getTime(), bar1.getTime());
+//        for (IOrder order : previousOrders) {
+//            console.getOut().println("Order info: " + order);
+//        }
 
 
 
@@ -546,6 +646,20 @@ public class Strategy implements IStrategy {
 
 //        IOrder order = engine.submitOrder(getLabel(instrument), instrument, orderCmd, getAmount(), 0, 20, 10, 30);
         DataCube.addOrder(TestMainRepeater.getLoopCounter(), order);
+
+
+
+//        String[] data = new String[]{
+//                String.valueOf(order.getLabel()),
+//                String.valueOf(order.getOrderCommand()),
+//                String.valueOf(order.getAmount()),
+//                String.valueOf(order.getProfitLossInAccountCurrency()),
+//                String.valueOf(order.getProfitLossInPips()),
+//                String.valueOf(order.getCommissionInUSD())
+//        };
+
+//        Tools.OrdersWindow.model.addRow(data);
+
 
         orderCounter++;
 
@@ -574,8 +688,9 @@ public class Strategy implements IStrategy {
         if (lots < 0.001){
             lots = 0.001;
         }
-
-        return lots;
+/** -------------------------------------------------------------------------------------------------- 0.01 ---------------- */
+        return 0.01;
+//        return lots;
     }
 
     private void printMe(Object toPrint) throws JFException {
@@ -587,36 +702,5 @@ public class Strategy implements IStrategy {
         label = label + (counter++);
         label = label.toUpperCase();
         return label;
-    }
-
-    private void dataCubeOrdersUpdate() throws JFException {
-        int orderLocalCounter = 0;
-        List<IOrder> orders = new ArrayList<IOrder>();
-
-        // search the entire list of orders
-        for(IOrder actualOrder : engine.getOrders()){
-            String orderId = instrument.toString() + orderLocalCounter;
-            orderLocalCounter++;
-
-            // id z engine == id z "generatoru" ???
-            if (actualOrder.getId() == orderId) {
-                // jestli ano projed seznam objednavek v DataCube
-                for(IOrder dataCubeOrder : DataCube.getOrders(1)) {
-                    // jestli id z datacube == id z engine a zaroven z generatoru
-                    if (dataCubeOrder.getId() == orderId){
-                        System.out.println("Schoda, order: " + orderId);
-
-                        //nahrazuji stary order novym | dataCubeOrder / actualOrder
-                        DataCube.setOrder(1, actualOrder);
-
-
-
-
-                        IOrder compare1 = dataCubeOrder;
-                        IOrder compare2 = actualOrder;
-                    }
-                }
-            }
-        }
     }
 }

@@ -26,18 +26,16 @@ public class TestMainRepeater {
     private static String reportsFileLocation = "C:\\Users\\lukas\\Desktop\\Exit\\Reports\\report.html";
     private static int loopCount = 0;
     private static int openingDeposit = 1000;
-    private static int maActual_1 = 0;
-    private static int maActual_2 = 0;
-    private static int parameterIncreaseSize = 10;
-    public static ArrayList<ArrayList<Double>> equitiesStorage = new ArrayList<>();
+    private static int SL = 0;
+    private static int TP = 0;
 
     public static void setListOfParameters(ArrayList<ArrayList<Integer>> listOfParameters) {
         TestMainRepeater.listOfParameters = listOfParameters;
     }
 
-    public static ArrayList<ArrayList<Integer>> getListOfParameters() {
-        return listOfParameters;
-    }
+//    public static ArrayList<ArrayList<Integer>> getListOfParameters() {
+//        return listOfParameters;
+//    }
 
     private static ArrayList<ArrayList<Integer>> listOfParameters = new ArrayList<>(1);
 
@@ -66,13 +64,13 @@ public class TestMainRepeater {
         loadData();
 
         // set next pair of parameters
-        maActual_1 = listOfParameters.get(0).get(loopCount);
-        maActual_2 = listOfParameters.get(1).get(loopCount);
+        SL = listOfParameters.get(0).get(loopCount);
+        TP = listOfParameters.get(1).get(loopCount);
 
 
         //LOGGER.info("Starting strategy");
         // run strategy
-        client.startStrategy(new Strategy(maActual_1, maActual_2, false), getLoadingProgressListener());
+        client.startStrategy(new Strategy(SL, TP, false), getLoadingProgressListener());
     }
 
     private static void setSystemListener() {
@@ -85,7 +83,7 @@ public class TestMainRepeater {
 
             @Override
             public void onStop(long processId) {
-                if (maActual_1 <= listOfParameters.get(0).size()) {
+                if (SL <= listOfParameters.get(0).size()) {
                     //LOGGER.info("Strategy started: " + processId);
                     strategyId = processId;
 
@@ -182,8 +180,8 @@ public class TestMainRepeater {
     }
 
 
-    public static int getMaActual_2() {
-        return maActual_2;
+    public static int getTP() {
+        return TP;
     }
 
     public static int getOpeningDeposit() {
@@ -198,12 +196,12 @@ public class TestMainRepeater {
         return loopCount;
     }
 
-    public static int getMaActual_1() {
-        return maActual_1;
+    public static int getSL() {
+        return SL;
     }
 
-    public static void setMaActual_1(int maActual_1) {
-        TestMainRepeater.maActual_1 = maActual_1;
+    public static void setSL(int SL) {
+        TestMainRepeater.SL = SL;
     }
 
 }

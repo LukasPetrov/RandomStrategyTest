@@ -15,7 +15,7 @@
           <gridbag weightx="1.0" weighty="1.0"/>
         </constraints>
         <properties>
-          <text value="1000"/>
+          <text value="100000"/>
           <toolTipText value="1000 USD e.g."/>
         </properties>
       </component>

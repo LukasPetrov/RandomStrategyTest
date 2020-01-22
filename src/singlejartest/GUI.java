@@ -1,7 +1,6 @@
 package singlejartest;
 
-import com.dukascopy.api.Instrument;
-import com.dukascopy.api.Period;
+import com.dukascopy.api.*;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -11,13 +10,17 @@ import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 
 import javax.swing.*;
-import javax.xml.crypto.Data;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class GUI {
     private JPanel panel1;
@@ -108,7 +111,7 @@ public class GUI {
                 DataCube.setMa_2(Short.parseShort(ma_2.getText()));
 
                 // save new dateFrom
-                TestMainRepeater.setMaActual_1(Integer.parseInt(ma_1.getText()));
+                TestMainRepeater.setSL(Integer.parseInt(ma_1.getText()));
 
                 // clean console text area
                 ConsoleTextArea.selectAll();
@@ -137,9 +140,7 @@ public class GUI {
 
 
                 // get list of parameters
-                TestMainRepeater.setListOfParameters(
-                        Tools.MACrossList.listOfParameters(
-                                DataCube.getMa_1()/10, DataCube.getMa_2()/10));
+                TestMainRepeater.setListOfParameters(Tools.SLTPGenerator.listOfParameters());
 
 
                 // start test
@@ -385,6 +386,110 @@ public class GUI {
      */
     public JComponent $$$getRootComponent$$$() {
         return panel1;
+    }
+
+
+    public static class OrdersWindow {
+        private static java.util.List<IOrder> data;
+        // frame
+        JFrame frame;
+        // Table
+        public static JTable table = null;
+        public static DefaultTableModel model;
+
+        OrdersWindow(){
+            // Frame initiallization
+            frame = new JFrame();
+
+            // Frame Title
+            frame.setTitle("Orders");
+//
+//        List<IOrder> list = null;
+//        if (list.size() > 0){
+//            // create list
+//            ArrayList<String[]> data = new ArrayList<>();
+//
+//            // add all orders to the String[][]
+//            for (IOrder order : list) {
+//                // Data to be displayed in the JTable
+//                data.add(new String[]{
+//                        String.valueOf(order.getLabel()),
+//                        String.valueOf(order.getOrderCommand()),
+//                        String.valueOf(order.getAmount()),
+//                        String.valueOf(order.getProfitLossInAccountCurrency()),
+//                        String.valueOf(order.getProfitLossInPips()),
+//                        String.valueOf(order.getCommissionInUSD())
+//                });
+//            }
+//
+//            // convert arrayList to String[][]
+//            String[][] array = new String[data.size()][];
+//            for (int i = 0; i < data.size(); i++) {
+//                String[] row = data.get(i);
+//                array[i] = row;
+//            }
+//        }
+
+
+            // Column Names
+            String[] columnNames = { "Label", "Command", "Amount", "Profit", "Profit in Pips", "Commission" };
+
+            model = new DefaultTableModel(columnNames,0);
+
+            // Initializing the JTable
+            table = new JTable(model);
+
+            table.setBounds(30, 40, 200, 300);
+
+            // adding it to JScrollPane
+            JScrollPane scrollPane = new JScrollPane(table);
+            frame.add(scrollPane);
+
+            // Frame Size
+            frame.setSize(500, 600);
+
+            // Frame Visible = true
+            frame.setVisible(true);
+        }
+
+        /** remove all rows from the model */
+        public static void clear(DefaultTableModel model){
+            if(model != null) {
+                if (model.getRowCount() > 0) {
+                    for (int i = model.getRowCount() - 1; i > -1; i--) {
+                        model.removeRow(i);
+                    }
+                }
+            }
+        }
+
+        public static void main(String[] args){
+
+            data = new ArrayList<>();
+
+            new OrdersWindow();
+
+            GUI.OrdersWindow.model.addRow(new Object[]{"Column 1", "Column 2", "Column 3"});
+            GUI.OrdersWindow.model.addRow(new Object[]{"Column 1", "Column 2", "Column 3"});
+
+
+            // create runnable method
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    System.out.println("Next sec");
+
+                    // remove all rows from the model
+//                    OrdersWindow.clear(OrdersWindow.model);
+
+                    // fill model by new data
+                    GUI.OrdersWindow.model.addRow(new Object[]{"Column 1", "Column 2", "Column 3"});
+                }
+            };
+
+            // start runnable method
+            ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+            executor.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.SECONDS);
+        }
     }
 
     public static class ShowChart extends ApplicationFrame {
