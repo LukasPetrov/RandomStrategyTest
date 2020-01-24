@@ -35,6 +35,9 @@ import com.dukascopy.api.IIndicators.AppliedPrice;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -272,7 +275,7 @@ public class Strategy implements IStrategy {
         }
 
         //get correct number of valid orders
-        int numOfOrders = 0;
+        int numOfOrdersProfitLoss = 0;
         int profitOrders = 0;
         int lossOrders = 0;
         double biggestProfit = 0;
@@ -281,7 +284,7 @@ public class Strategy implements IStrategy {
 
         for (IOrder order: DataCube.getOrders(TestMainRepeater.getLoopCounter())) {
             if (order.getState().name() == "CLOSED" || order.getState().name() == "FILLED"){
-                numOfOrders++;
+                numOfOrdersProfitLoss++;
                 avrgCommission += order.getCommissionInUSD();
             }
             if (order.getProfitLossInUSD() < 0) {
@@ -296,20 +299,81 @@ public class Strategy implements IStrategy {
             }
         }
 
+        /** --------------------------------------------------------------------------------------------------------*/
+
+        // get order duration
+        double longerOrder = 0;
+        double shorterOrder = 0;
+        double avrgDuration=0;
+
+//        new Date(DataCube.getOrders(0).get(2).getFillTime())
+
+        for (IOrder order: DataCube.getOrders(TestMainRepeater.getLoopCounter())) {
+            long duration = 0;
+            if (order.getState().name() == "CLOSED"){
+
+                duration = getDuration(order.getFillTime(), order.getCloseTime());
+
+                /** --------------------------------------------------------------------------------------------------------------------MOC VYSOKY CISLA ???----------------------------------------------------*/
+//                avrgDuration += duration;
+
+
+                if (duration < shorterOrder) {
+                    shorterOrder = duration;
+                }else if (duration > longerOrder) {
+                    longerOrder = duration;
+                }
+            }
+
+        }
+
+        shorterOrder = shorterOrder / 60 /60;
+        longerOrder = longerOrder / 60 /60;
+
+        /** --------------------------------------------------------------------------------------------------------*/
 
 
         DecimalFormat df = new DecimalFormat("#.##");
-        String successRate = df.format((double)profitOrders/((double)numOfOrders/100));
-        avrgCommission = Double.parseDouble(df.format(avrgCommission/numOfOrders));
+        String successRate = df.format((double)profitOrders/((double)numOfOrdersProfitLoss/100));
+        String shorterOrderS = df.format(shorterOrder);
+        String longerOrderS = df.format(longerOrder);
+        avrgCommission = Double.parseDouble(df.format(avrgCommission/numOfOrdersProfitLoss));
 
         TestMainRepeater.printToConsoleTextArea(
                 "\n" + DataCube.getStrategyName(TestMainRepeater.getLoopCounter()) +
                         "\t" + getEquity() +
                         "\t" + successRate + "%" +
-                        "\t" + numOfOrders +
+                        "\t" + numOfOrdersProfitLoss +
                         "\t" + avrgCommission +
-                        "\t" + biggestLoss + "/" + biggestProfit
+                        "\t" + biggestLoss + "/" + biggestProfit +
+                        "\t\t" + shorterOrderS + "/" + longerOrderS
         );
+    }
+
+    private long getDuration(long startTime, long closeTime) {
+
+        // get open time
+        SimpleDateFormat newFormat1 = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss");
+        String formatedDateOpen = newFormat1.format(closeTime);
+
+        // get close time
+        SimpleDateFormat newFormat2 = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss");
+        String formatedDateClose = newFormat2.format(startTime);
+
+//        Instant test = Instant.parse("1546383625238");
+
+        System.out.println("Open  " + formatedDateOpen);
+        System.out.println("Close " + formatedDateClose);
+        System.out.println("Close ");
+
+        String open = formatedDateOpen.substring(0, 10) + "T" + formatedDateOpen.substring(11)+ ".00Z";
+        String close = formatedDateClose.substring(0, 10) + "T" + formatedDateClose.substring(11)+ ".00Z";
+
+        Instant start = Instant.parse(close);
+        Instant end = Instant.parse(open);
+
+        Duration durationInSec = Duration.between(start, end);
+        return durationInSec.getSeconds();
     }
 
     @Override
@@ -397,7 +461,6 @@ public class Strategy implements IStrategy {
         try {
             askBar.getTime();
             timeResultNumber = time0_5 * 60;
-            if ((time0_5 * 60) > 86399) timeResultNumber =86399;
             if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time0_5_ready) {
                 // random BUY/SELL == 1/0
                 int order = getRandomNumber(0, 1);
@@ -419,7 +482,6 @@ public class Strategy implements IStrategy {
                 time5_10 = getRandomNumber(5 * 60, 10 * 60);
             }
             timeResultNumber = time5_10 * 60;
-            if ((time5_10 * 60) > 86399) timeResultNumber =86399;
             if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time5_10_ready) {
                 // random BUY/SELL == 1/0
                 int order = getRandomNumber(0, 1);
@@ -441,7 +503,6 @@ public class Strategy implements IStrategy {
                 time10_15 = getRandomNumber(10 * 60, 15 * 60);
             }
             timeResultNumber = time10_15 * 60;
-            if ((time10_15 * 60) > 86399) timeResultNumber =86399;
             if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time10_15_ready) {
                 // random BUY/SELL == 1/0
                 int order = getRandomNumber(0, 1);
@@ -463,7 +524,6 @@ public class Strategy implements IStrategy {
                 time15_20 = getRandomNumber(15 * 60, 20 * 60);
             }
             timeResultNumber = time15_20 * 60;
-            if ((time15_20 * 60) > 86399) timeResultNumber =86399;
             if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time15_20_ready) {
                 // random BUY/SELL == 1/0
                 int order = getRandomNumber(0, 1);
@@ -482,10 +542,9 @@ public class Strategy implements IStrategy {
                 time10_15_ready = true;
 
                 // vygeneruje nahodny cas pro dalsi casovy usek
-                time20_24 = getRandomNumber(20 * 60, 24 * 60);
+                time20_24 = getRandomNumber(20 * 60, 24 * 59);
             }
-            timeResultNumber = time20_24 * 60;
-            if ((time20_24 * 60) > 86399) timeResultNumber =86399;
+            timeResultNumber = (time20_24 * 60);
             if (formatter.format(askBar.getTime()).equals(LocalTime.ofSecondOfDay(timeResultNumber).toString()) && time20_24_ready) {
                 // random BUY/SELL == 1/0
                 int order = getRandomNumber(0, 1);

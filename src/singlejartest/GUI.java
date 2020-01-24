@@ -43,7 +43,7 @@ public class GUI {
         $$$setupUI$$$();
         f.add(panel1);
 
-        f.setSize(700, 1000);
+        f.setSize(800, 1000);
         f.setVisible(true);
 
         startButton.addActionListener(new ActionListener() {
@@ -123,7 +123,7 @@ public class GUI {
                         "Num Of Orders\t" +
                         "Avrg fee\t" +
                         "Biggest loss/profit\t" +
-                        "Avrg Order Time");
+                        "Avrg Time");
 
                 // get list of parameters
                 TestMainRepeater.refreshListOfParameters();
